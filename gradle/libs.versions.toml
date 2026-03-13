@@ -178,6 +178,7 @@ limboloohp = { group = "com.loohp", name = "Limbo", version.ref = "limboloohp" }
 adventureApi = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
 adventureSerializerGson = { group = "net.kyori", name = "adventure-text-serializer-gson", version.ref = "adventure" }
 adventureSerializerLegacy = { group = "net.kyori", name = "adventure-text-serializer-legacy", version.ref = "adventure" }
+adventureTextMiniMessage = { group = "net.kyori", name = "adventure-text-minimessage", version.ref = "adventure" }
 adventureSerializerBungee = { group = "net.kyori", name = "adventure-text-serializer-bungeecord", version.ref = "adventure-serializer-bungee" }
 
 # platform extensions
@@ -210,7 +211,7 @@ junit = ["junitApi", "junitParams", "junitEngine"]
 dockerJava = ["dockerJavaApi", "dockerJavaHttpclient5"]
 testContainers = ["testContainers", "testContainersJunit"]
 nightConfig = ["nightConfigToml", "nightConfigYaml", "nightConfigJson"]
-adventure = ["adventureApi", "adventureSerializerGson", "adventureSerializerLegacy"]
+adventure = ["adventureApi", "adventureSerializerGson", "adventureSerializerLegacy", "adventureTextMiniMessage"]
 
 proxyPlatform = ["bungeecord", "velocity", "waterdogpe"]
 serverPlatform = ["spigot", "sponge", "nukkitX", "minestom", "minestomExtensions", "limboloohp"]

@@ -21,6 +21,7 @@ plugins {
 
 dependencies {
   api(libs.adventureApi)
+  api(libs.adventureTextMiniMessage)
   compileOnly(libs.guava)
   compileOnlyApi(projects.wrapperJvm.wrapperJvmApi)
 }

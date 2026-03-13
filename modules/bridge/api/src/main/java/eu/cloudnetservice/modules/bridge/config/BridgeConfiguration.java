@@ -29,6 +29,8 @@ import java.util.function.Function;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.ToString;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 
@@ -36,21 +38,24 @@ import org.jetbrains.annotations.UnknownNullability;
 @EqualsAndHashCode
 public final class BridgeConfiguration {
 
+  private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+  private static final LegacyComponentSerializer LEGACY_SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
+
   public static final Map<String, Map<String, String>> DEFAULT_MESSAGES = ImmutableMap.of(
     "default",
     new HashMap<>(ImmutableMap.<String, String>builder()
-      .put("command-hub-success-connect", "§7You did successfully connect to %server%.")
-      .put("command-hub-already-in-hub", "§cYou are already connected to a hub service.")
-      .put("command-hub-no-server-found", "§7There is currently §cno §7hub server available.")
-      .put("server-join-cancel-because-maintenance", "§7This server is currently in maintenance mode.")
-      .put("server-join-cancel-because-permission", "§7You do not have the required permissions to join this server.")
-      .put("proxy-join-cancel-because-permission", "§7You do not have the required permissions to join this proxy.")
-      .put("proxy-join-cancel-because-maintenance", "§7This proxy is currently in maintenance mode.")
-      .put("proxy-join-disconnect-because-no-hub", "§cThere is currently no hub server you can connect to.")
-      .put("server-kick-no-other-hub", "§cThere is currently no hub server you can connect to.")
-      .put("command-cloud-sub-command-no-permission", "§7You are not allowed to use §b%command%.")
-      .put("already-connected", "§cYou are already connected to this network!")
-      .put("error-connecting-to-server", "§cUnable to connect to %server%: %reason%")
+      .put("command-hub-success-connect", "<gray>You did successfully connect to %server%.")
+      .put("command-hub-already-in-hub", "<red>You are already connected to a hub service.")
+      .put("command-hub-no-server-found", "<gray>There is currently <red>no <gray>hub server available.")
+      .put("server-join-cancel-because-maintenance", "<gray>This server is currently in maintenance mode.")
+      .put("server-join-cancel-because-permission", "<gray>You do not have the required permissions to join this server.")
+      .put("proxy-join-cancel-because-permission", "<gray>You do not have the required permissions to join this proxy.")
+      .put("proxy-join-cancel-because-maintenance", "<gray>This proxy is currently in maintenance mode.")
+      .put("proxy-join-disconnect-because-no-hub", "<red>There is currently no hub server you can connect to.")
+      .put("server-kick-no-other-hub", "<red>There is currently no hub server you can connect to.")
+      .put("command-cloud-sub-command-no-permission", "<gray>You are not allowed to use <aqua>%command%<gray>.")
+      .put("already-connected", "<red>You are already connected to this network!")
+      .put("error-connecting-to-server", "<red>Unable to connect to %server%: %reason%")
       .build()));
 
   private final String prefix;
@@ -61,7 +66,7 @@ public final class BridgeConfiguration {
   private final Collection<ProxyFallbackConfiguration> fallbackConfigurations;
 
   public BridgeConfiguration() {
-    this.prefix = "§7Cloud §8| §b";
+    this.prefix = "<gray>Cloud <dark_gray>| <aqua>";
     this.localizedMessages = new HashMap<>(DEFAULT_MESSAGES);
     this.excludedGroups = new ArrayList<>();
     this.hubCommandNames = Arrays.asList("hub", "lobby", "leave", "l");
@@ -164,7 +169,7 @@ public final class BridgeConfiguration {
 
     // format the final message
     var formattedMessage = String.format("%s%s", withPrefix ? this.prefix : "", message);
-    C component = toComponentConverter.apply(formattedMessage);
+    C component = toComponentConverter.apply(this.formatMessage(formattedMessage));
 
     // check if the converter was able to convert the message
     return component != null ? component : defaultValue;
@@ -172,5 +177,12 @@ public final class BridgeConfiguration {
 
   private @Nullable String resolveMessage(@Nullable Map<String, String> messages, @NonNull String key) {
     return messages == null ? null : messages.get(key);
+  }
+
+  private @NonNull String formatMessage(@NonNull String message) {
+    var component = message.indexOf('§') == -1
+      ? MINI_MESSAGE.deserialize(message)
+      : LEGACY_SECTION_SERIALIZER.deserialize(message);
+    return LEGACY_SECTION_SERIALIZER.serialize(component);
   }
 }
