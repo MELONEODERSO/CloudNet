@@ -39,7 +39,11 @@ import org.jetbrains.annotations.UnknownNullability;
 public final class BridgeConfiguration {
 
   private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
-  private static final LegacyComponentSerializer LEGACY_SECTION_SERIALIZER = LegacyComponentSerializer.legacySection();
+  private static final LegacyComponentSerializer LEGACY_SECTION_SERIALIZER = LegacyComponentSerializer.builder()
+    .character(LegacyComponentSerializer.SECTION_CHAR)
+    .hexColors()
+    .useUnusualXRepeatedCharacterHexFormat()
+    .build();
 
   public static final Map<String, Map<String, String>> DEFAULT_MESSAGES = ImmutableMap.of(
     "default",
