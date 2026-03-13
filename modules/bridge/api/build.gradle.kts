@@ -22,6 +22,7 @@ plugins {
 dependencies {
   api(libs.adventureApi)
   api(libs.adventureTextMiniMessage)
+  api(libs.adventureSerializerLegacy)
   compileOnly(libs.guava)
   compileOnlyApi(projects.wrapperJvm.wrapperJvmApi)
 }
