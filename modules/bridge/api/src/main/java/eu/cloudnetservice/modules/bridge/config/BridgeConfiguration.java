@@ -157,6 +157,11 @@ public final class BridgeConfiguration {
       }
     }
 
+    // treat blank messages as disabled (no output)
+    if (message.isBlank()) {
+      return defaultValue;
+    }
+
     // format the final message
     var formattedMessage = String.format("%s%s", withPrefix ? this.prefix : "", message);
     C component = toComponentConverter.apply(formattedMessage);

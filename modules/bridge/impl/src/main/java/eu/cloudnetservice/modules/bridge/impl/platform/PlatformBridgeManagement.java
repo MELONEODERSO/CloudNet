@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -314,7 +315,7 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
     @NonNull FallbackProfile profile,
     @Nullable String currentServerName
   ) {
-    return this.cachedServices.values().stream()
+    var possibleServices = this.cachedServices.values().stream()
       // check if the service is associated with the task of the fallback
       .filter(service -> service.serviceId().taskName().equals(task))
       // check if the player failed to connect to that fallback during the current iteration
@@ -323,13 +324,23 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
       .filter(service -> service.connected() && service.readProperty(BridgeDocProperties.IS_ONLINE))
       // check if the player is not currently connected to that service
       .filter(service -> currentServerName == null || !service.name().equals(currentServerName))
-      // find the service with the lowest player count known to use
-      .min((optionA, optionB) -> {
-        var playersOnOptionA = optionA.readProperty(BridgeDocProperties.ONLINE_COUNT);
-        var playersOnOptionB = optionB.readProperty(BridgeDocProperties.ONLINE_COUNT);
-        // compare the player count
-        return Integer.compare(playersOnOptionA, playersOnOptionB);
-      });
+      .toList();
+    if (possibleServices.isEmpty()) {
+      return Optional.empty();
+    }
+
+    // find all fallback services with the currently lowest known player count
+    var lowestPlayerCount = possibleServices.stream()
+      .mapToInt(service -> service.readProperty(BridgeDocProperties.ONLINE_COUNT))
+      .min()
+      .orElse(Integer.MAX_VALUE);
+    var bestCandidates = possibleServices.stream()
+      .filter(service -> service.readProperty(BridgeDocProperties.ONLINE_COUNT) == lowestPlayerCount)
+      .toList();
+
+    // distribute players across equal candidates instead of always choosing the first entry
+    var target = bestCandidates.get(ThreadLocalRandom.current().nextInt(bestCandidates.size()));
+    return Optional.of(target);
   }
 
   public void handleFallbackConnectionSuccess(@NonNull UUID uniqueId) {
