@@ -18,14 +18,17 @@ package eu.cloudnetservice.modules.bridge.impl.platform.fallback;
 
 import java.util.HashSet;
 import java.util.Set;
+import org.jetbrains.annotations.Nullable;
 import lombok.NonNull;
 
 public final class FallbackProfile {
 
   private final Set<String> triedServices = new HashSet<>();
+  private String pendingService;
 
   public void reset() {
     this.triedServices.clear();
+    this.pendingService = null;
   }
 
   public void selectService(@NonNull String service) {
@@ -35,4 +38,13 @@ public final class FallbackProfile {
   public boolean hasTried(@NonNull String service) {
     return this.triedServices.contains(service);
   }
+
+  public @Nullable String pendingService() {
+    return this.pendingService;
+  }
+
+  public void pendingService(@Nullable String pendingService) {
+    this.pendingService = pendingService;
+  }
 }
+

@@ -86,6 +86,7 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
   protected final WrapperConfiguration wrapperConfig;
   protected final LoadingCache<UUID, FallbackProfile> fallbackProfiles;
   protected final Map<UUID, ServiceInfoSnapshot> cachedServices;
+  protected final Map<String, Integer> pendingFallbackAssignments;
 
   protected volatile ServiceTask selfTask;
   protected volatile BridgeConfiguration configuration;
@@ -112,6 +113,7 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
     this.serviceProvider = serviceProvider;
     this.wrapperConfig = wrapperConfig;
     this.cachedServices = new ConcurrentHashMap<>();
+    this.pendingFallbackAssignments = new ConcurrentHashMap<>();
     this.fallbackProfiles = Caffeine.newBuilder()
       .expireAfterAccess(Duration.ofMinutes(10))
       .build($ -> new FallbackProfile());
@@ -241,7 +243,10 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
       // add the service to the tried ones
       .map(service -> {
         // we cannot flat-map because of the orElseGet
-        service.ifPresent(ser -> profile.selectService(ser.name()));
+        service.ifPresent(ser -> {
+          profile.selectService(ser.name());
+          this.registerPendingFallback(profile, ser.name());
+        });
         return service;
       }).orElseGet(() -> {
         // check if the configuration has a default fallback task
@@ -253,6 +258,7 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
           .map(service -> {
             // select as the service we are connecting to
             profile.selectService(service.name());
+            this.registerPendingFallback(profile, service.name());
             return service;
           });
       });
@@ -329,13 +335,14 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
       return Optional.empty();
     }
 
-    // find all fallback services with the currently lowest known player count
+    // find all fallback services with the currently lowest effective player count
+    // (online players + pending fallback assignments not visible in snapshots yet)
     var lowestPlayerCount = possibleServices.stream()
-      .mapToInt(service -> service.readProperty(BridgeDocProperties.ONLINE_COUNT))
+      .mapToInt(this::effectivePlayerCount)
       .min()
       .orElse(Integer.MAX_VALUE);
     var bestCandidates = possibleServices.stream()
-      .filter(service -> service.readProperty(BridgeDocProperties.ONLINE_COUNT) == lowestPlayerCount)
+      .filter(service -> this.effectivePlayerCount(service) == lowestPlayerCount)
       .toList();
 
     // distribute players across equal candidates instead of always choosing the first entry
@@ -343,15 +350,44 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
     return Optional.of(target);
   }
 
+
+  protected int effectivePlayerCount(@NonNull ServiceInfoSnapshot service) {
+    var onlinePlayers = service.readProperty(BridgeDocProperties.ONLINE_COUNT);
+    var pendingPlayers = this.pendingFallbackAssignments.getOrDefault(service.name(), 0);
+    return onlinePlayers + pendingPlayers;
+  }
+
+  protected void registerPendingFallback(@NonNull FallbackProfile profile, @NonNull String serviceName) {
+    this.unregisterPendingFallback(profile);
+    this.pendingFallbackAssignments.merge(serviceName, 1, Integer::sum);
+    profile.pendingService(serviceName);
+  }
+
+  protected void unregisterPendingFallback(@NonNull FallbackProfile profile) {
+    var pendingService = profile.pendingService();
+    if (pendingService == null) {
+      return;
+    }
+
+    this.pendingFallbackAssignments.computeIfPresent(pendingService, ($, pendingCount) -> pendingCount <= 1 ? null : pendingCount - 1);
+    profile.pendingService(null);
+  }
+
   public void handleFallbackConnectionSuccess(@NonNull UUID uniqueId) {
     // if present clear the profile
     var profile = this.fallbackProfiles.getIfPresent(uniqueId);
     if (profile != null) {
+      this.unregisterPendingFallback(profile);
       profile.reset();
     }
   }
 
   public void removeFallbackProfile(@NonNull UUID uniqueId) {
+    var profile = this.fallbackProfiles.getIfPresent(uniqueId);
+    if (profile != null) {
+      this.unregisterPendingFallback(profile);
+    }
+
     this.fallbackProfiles.invalidate(uniqueId);
   }
 
