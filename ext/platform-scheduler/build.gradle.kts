@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-package eu.cloudnetservice.cloudnet.gradle.util
+plugins {
+  id("cloudnet-java")
+  id("cloudnet-publish")
+}
 
-object Versions {
-  const val CLOUDNET = "4.0.0-RC17"
-  const val CLOUDNET_CODE_NAME = "Blizzard"
+repositories {
+  maven("https://repo.papermc.io/repository/maven-public/")
+}
+
+dependencies {
+  compileOnly(libs.folia)
 }
