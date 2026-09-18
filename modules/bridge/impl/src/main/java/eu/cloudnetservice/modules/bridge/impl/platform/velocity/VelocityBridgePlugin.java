@@ -35,7 +35,7 @@ import lombok.NonNull;
   name = "CloudNet-Bridge",
   version = "@version@",
   description = "Bridges service software support between all supported versions for easy CloudNet plugin development",
-  authors = "CloudNetService")
+  authors = "CloudNetService, MELONEODERSO")
 public final class VelocityBridgePlugin implements PlatformEntrypoint {
 
   private final ProxyServer proxy;
