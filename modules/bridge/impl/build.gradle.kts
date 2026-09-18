@@ -107,7 +107,7 @@ tasks.shadowJar {
 }
 
 moduleJson {
-  name = "CloudNet-Bridge"
+  name = "Bridge"
   author = "CloudNetService, MELONEODERSO"
   main = "eu.cloudnetservice.modules.bridge.impl.node.CloudNetBridgeModule"
   description = "Bridges service software support between all supported versions for easy CloudNet plugin development"

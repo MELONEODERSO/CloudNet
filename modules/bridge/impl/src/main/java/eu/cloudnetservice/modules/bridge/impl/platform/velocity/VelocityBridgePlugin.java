@@ -32,7 +32,7 @@ import lombok.NonNull;
 @Singleton
 @PlatformPlugin(
   platform = "velocity",
-  name = "CloudNet-Bridge",
+  name = "Bridge",
   version = "@version@",
   description = "Bridges service software support between all supported versions for easy CloudNet plugin development",
   authors = "CloudNetService, MELONEODERSO")
