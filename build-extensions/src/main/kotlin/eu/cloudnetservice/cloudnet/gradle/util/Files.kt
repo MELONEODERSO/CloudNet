@@ -29,7 +29,7 @@ object Files {
   const val papiExpansion = "cloudnet-papi-expansion.jar"
   const val luckPermsPlugin = "cloudnet-luckperms.jar"
 
-  const val bridge = "cloudnet-bridge.jar"
+  const val bridge = "bridge.jar"
   const val cloudflare = "cloudnet-cloudflare.jar"
   const val dockerizedServices = "cloudnet-dockerized-services.jar"
   const val databaseMongo = "cloudnet-database-mongodb.jar"
