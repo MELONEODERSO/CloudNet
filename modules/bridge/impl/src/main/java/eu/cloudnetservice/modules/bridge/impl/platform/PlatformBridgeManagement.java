@@ -332,14 +332,19 @@ public abstract class PlatformBridgeManagement<P, I> implements InternalBridgeMa
       return Optional.empty();
     }
 
-    // find all fallback services with the currently lowest effective player count
-    // (online players + pending fallback assignments not visible in snapshots yet)
-    var lowestPlayerCount = possibleServices.stream()
-      .mapToInt(this::effectivePlayerCount)
+    // snapshot the effective player count once per service, as pendingFallbackAssignments can be mutated
+    // concurrently by other threads - re-reading it in a second pass could change the result and leave no
+    // candidate matching the previously computed minimum
+    var countedServices = possibleServices.stream()
+      .map(service -> new Tuple2<>(service, this.effectivePlayerCount(service)))
+      .toList();
+    var lowestPlayerCount = countedServices.stream()
+      .mapToInt(Tuple2::_2)
       .min()
       .orElse(Integer.MAX_VALUE);
-    var bestCandidates = possibleServices.stream()
-      .filter(service -> this.effectivePlayerCount(service) == lowestPlayerCount)
+    var bestCandidates = countedServices.stream()
+      .filter(counted -> counted._2() == lowestPlayerCount)
+      .map(Tuple2::_1)
       .toList();
 
     // distribute players across equal candidates instead of always choosing the first entry
